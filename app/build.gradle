@@ -1,0 +1,49 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+
+android {
+    signingConfigs {
+        config {
+            keyAlias 'key0'
+            keyPassword 'abbmanagerservice'
+            storeFile file('/Users/holywon/Desktop/ABB/ABBManagerService.jks')
+            storePassword 'abbmanagerservice'
+        }
+    }
+    compileSdkVersion 26
+    defaultConfig {
+        applicationId 'com.foxconn.abbassistant'
+        minSdkVersion 26
+        targetSdkVersion 26
+        versionCode 6
+        versionName "8.0010.07"
+        ndk { // 设置支持的SO库架构
+            abiFilters 'arm64-v8a'//, 'armeabi-v7a', 'x86', 'x86_64','armeabi'
+        }
+    }
+    sourceSets {
+        main() {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    //noinspection GradleDynamicVersion,GradleCompatible
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation(name: 'lib-dds-1.0.11.1-release', ext: 'aar')
+    implementation files('libs/eventbus-3.0.0-beta1.jar')
+}
