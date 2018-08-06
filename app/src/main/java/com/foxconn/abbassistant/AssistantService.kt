@@ -377,6 +377,14 @@ class AssistantService : Service() {
                     DDS.getInstance().doAuth()
                 }, 500)
             }
+            "WAKEUP" -> {//manager service 传送设备状态 播报信息
+                onBindService("")
+                if (event.getSuccess()!!) {
+                    assistantManager?.basicTypes(1, 1, "唤醒")
+                } else {
+                    assistantManager?.basicTypes(1, 0, "唤醒")
+                }
+            }
         }
     }
 
@@ -399,11 +407,15 @@ class AssistantService : Service() {
 //                DDS.getInstance().agent.disableWakeup()
                 assistantStatus = false
                 DDS.getInstance().agent.wakeupEngine.disableWakeup()
+                EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, false))
+
             }
             5 -> {//打开唤醒
 //                DDS.getInstance().agent.enableWakeup()
                 assistantStatus = true
                 DDS.getInstance().agent.wakeupEngine.enableWakeup()
+                EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, true))
+
             }
         }
     }
