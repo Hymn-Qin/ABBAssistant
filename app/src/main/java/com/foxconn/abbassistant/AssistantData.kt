@@ -34,6 +34,7 @@ object AssistantData {
 
     var UUID_PATH = "proc/tutkuuid"
 
+    var isOK: Boolean = true
     var isInitOk: Boolean = false//初始化状态
     var isDoAuth: Boolean = false//授权状态
     var isRunning: Boolean = false//运行状态

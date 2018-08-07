@@ -38,6 +38,7 @@ import com.foxconn.abbassistant.AssistantData.isDoAuth
 import com.foxconn.abbassistant.AssistantData.isInitOk
 import com.foxconn.abbassistant.AssistantData.isIniting
 import com.foxconn.abbassistant.AssistantData.isNoises
+import com.foxconn.abbassistant.AssistantData.isOK
 import com.foxconn.abbassistant.AssistantData.isRunning
 import com.foxconn.abbassistant.AssistantData.isTTSing
 import com.foxconn.abbassistant.AssistantData.isUpdated
@@ -357,6 +358,10 @@ class AssistantService : Service() {
     fun onEventMainThread(event: AssistantMessageEvent) {
         when (event.getMessage()) {
             "SWITCH_MODE" -> {//camera确认语音模式
+                when (event.getType()) {
+                    4 -> isOK = false
+                    5 -> isOK = true
+                }
             }
             "AUDIO" -> {//camera传送音频数据
                 audio(event.getPcm()!!)
@@ -421,7 +426,7 @@ class AssistantService : Service() {
     }
 
     private fun toTTS(msg: String) {
-        if (isInitOk) {
+        if (isInitOk && isOK) {
             DDS.getInstance().agent.ttsEngine.speak(msg, 3, "100", AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
         }
     }
@@ -449,7 +454,7 @@ class AssistantService : Service() {
     }
 
     private fun otherAudio(pcm: ByteArray) {
-        if (isInitOk && isDoAuth) {
+        if (isInitOk && isDoAuth && isOK) {
             if (TYPE_MODE_AUDIO == 1) {
                 DDS.getInstance().agent.feedPcm(pcm)
                 return
