@@ -6,9 +6,9 @@ package com.foxconn.abbassistant
  */
 
 object AssistantData {
-    //测试b99a7c884ad613d84285cc1c5b61678f 产品ID 278571928
-    //正式96dbe0389d835d1c7add97045b1b4ac3 产品ID 278571963
-    const val API_KEY = "96dbe0389d835d1c7add97045b1b4ac3"
+    //测试 b99a7c884ad613d84285cc1c5b61678f 产品ID 278571928
+    //正式 823c0ce3c6864d51deb39fa35b6ad45d 产品ID 278571963
+    const val API_KEY = "823c0ce3c6864d51deb39fa35b6ad45d"
     const val PRODUCT_ID = "278571963"
     //测试
     const val API_KEYS = "b99a7c884ad613d84285cc1c5b61678f"
@@ -35,6 +35,7 @@ object AssistantData {
     var UUID_PATH = "proc/tutkuuid"
 
     var isOK: Boolean = true
+
     var isInitOk: Boolean = false//初始化状态
     var isDoAuth: Boolean = false//授权状态
     var isRunning: Boolean = false//运行状态

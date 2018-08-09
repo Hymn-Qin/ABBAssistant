@@ -194,7 +194,7 @@ class AssistantService : Service() {
                         DDS.getInstance().doAuth()
                         isAuthing = true
                         //调用后才能唤醒
-                        DDS.getInstance().agent.wakeupEngine.enableWakeup()
+                        if (assistantStatus)DDS.getInstance().agent.wakeupEngine.enableWakeup()
                         Log.d(TAG, "onAuthSuccess -->" + DDS.getInstance().isAuthSuccess)
 
                         TTSListener()
@@ -358,6 +358,7 @@ class AssistantService : Service() {
     fun onEventMainThread(event: AssistantMessageEvent) {
         when (event.getMessage()) {
             "SWITCH_MODE" -> {//camera确认语音模式
+                toLog("是否打开（5）或关闭（4）语音助手" + event.getType())
                 when (event.getType()) {
                     4 -> isOK = false
                     5 -> isOK = true
@@ -411,14 +412,14 @@ class AssistantService : Service() {
             4 -> {//关闭唤醒
 //                DDS.getInstance().agent.disableWakeup()
                 assistantStatus = false
-                DDS.getInstance().agent.wakeupEngine.disableWakeup()
+                if (isInitOk) DDS.getInstance().agent.wakeupEngine.disableWakeup()
                 EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, false))
 
             }
             5 -> {//打开唤醒
 //                DDS.getInstance().agent.enableWakeup()
                 assistantStatus = true
-                DDS.getInstance().agent.wakeupEngine.enableWakeup()
+                if (isInitOk) DDS.getInstance().agent.wakeupEngine.enableWakeup()
                 EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, true))
 
             }
