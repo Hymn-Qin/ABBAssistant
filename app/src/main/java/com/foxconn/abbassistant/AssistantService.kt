@@ -362,7 +362,6 @@ class AssistantService : Service() {
                 when (event.getType()) {
                     4 -> {
                         isOK = false
-                        DDS.getInstance().agent.ttsEngine.shutup("100")
                     }
                     5 -> isOK = true
                 }
@@ -414,13 +413,12 @@ class AssistantService : Service() {
             }
             4 -> {//关闭唤醒
 //                DDS.getInstance().agent.disableWakeup()
-                assistantStatus = false
                 if (isInitOk) {
+                    DDS.getInstance().agent.avatarClick()
                     DDS.getInstance().agent.wakeupEngine.disableWakeup()
-                    DDS.getInstance().agent.ttsEngine.shutup("100")
                 }
                 EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, false))
-
+                assistantStatus = false
             }
             5 -> {//打开唤醒
 //                DDS.getInstance().agent.enableWakeup()
