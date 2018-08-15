@@ -32,6 +32,7 @@ import com.foxconn.abbassistant.AssistantData.TYPE_MODE_AUDIO
 import com.foxconn.abbassistant.AssistantData.USER_ID
 import com.foxconn.abbassistant.AssistantData.UUID_PATH
 import com.foxconn.abbassistant.AssistantData.assistantStatus
+import com.foxconn.abbassistant.AssistantData.clickOK
 import com.foxconn.abbassistant.AssistantData.deviceStatus
 import com.foxconn.abbassistant.AssistantData.isAuthing
 import com.foxconn.abbassistant.AssistantData.isDoAuth
@@ -89,10 +90,12 @@ class AssistantService : Service() {
                 assistantManager?.basicTypes(1, 1, "语音")
             }
             "sys.dialog.start" -> {
+                clickOK = true
                 onBindService("")
                 assistantManager?.basicTypes(1, 1, "语音")
             }
             "sys.dialog.end" -> {
+                clickOK = false
                 onBindService("")
                 assistantManager?.basicTypes(2, 1, "语音")
             }
@@ -414,7 +417,9 @@ class AssistantService : Service() {
             4 -> {//关闭唤醒
 //                DDS.getInstance().agent.disableWakeup()
                 if (isInitOk) {
-                    DDS.getInstance().agent.avatarClick()
+                    if (assistantStatus && clickOK) {
+                        DDS.getInstance().agent.avatarClick()
+                    }
                     DDS.getInstance().agent.wakeupEngine.disableWakeup()
                 }
                 EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, false))

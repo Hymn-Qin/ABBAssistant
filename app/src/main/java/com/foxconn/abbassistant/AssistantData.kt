@@ -50,6 +50,8 @@ object AssistantData {
 
     var assistantStatus: Boolean = true//唤醒状态
 
+    var clickOK: Boolean = false
+
     var deviceStatus: String = ""
 
 
