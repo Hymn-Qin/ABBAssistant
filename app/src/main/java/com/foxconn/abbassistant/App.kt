@@ -3,9 +3,8 @@ package com.foxconn.abbassistant
 import android.app.Application
 
 class App : Application() {
-
     companion object {
-        lateinit var instance : App
+        lateinit var instance: App
         private set
     }
     override fun onCreate() {

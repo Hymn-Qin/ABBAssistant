@@ -1,5 +1,7 @@
 package com.foxconn.abbassistant;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -7,8 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.Arrays;
+import java.util.ArrayList;
 
 public class AudioNoise {
 
@@ -90,5 +91,16 @@ public class AudioNoise {
             }
         }
         return sb.toString();
+    }
+    private boolean isWorked(String className) {
+        ActivityManager activityManager = (ActivityManager) App.Companion.getInstance().getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+        ArrayList<ActivityManager.RunningServiceInfo> runningServiceInfos = (ArrayList<ActivityManager.RunningServiceInfo>) activityManager.getRunningServices(30);
+        for (ActivityManager.RunningServiceInfo ServiceInfo : runningServiceInfos) {
+            if (ServiceInfo.service.getClassName().equals(className)) {
+                return true;
+            }
+
+        }
+        return false;
     }
 }

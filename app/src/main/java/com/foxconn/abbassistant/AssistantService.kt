@@ -11,10 +11,7 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.IBinder
 import android.util.Log
-import com.aispeech.dui.dds.DDS
-import com.aispeech.dui.dds.DDSAuthListener
-import com.aispeech.dui.dds.DDSConfig
-import com.aispeech.dui.dds.DDSInitListener
+import com.aispeech.dui.dds.*
 import com.aispeech.dui.dds.agent.MessageObserver
 import com.aispeech.dui.dds.agent.TTSEngine
 import com.aispeech.dui.dds.auth.AuthType
@@ -23,26 +20,20 @@ import com.aispeech.dui.dds.update.DDSUpdateListener
 import com.aispeech.dui.dsk.duiwidget.CommandObserver
 import com.foxconn.abbassistant.AssistantData.ALIAS_KEY
 import com.foxconn.abbassistant.AssistantData.API_KEY
-import com.foxconn.abbassistant.AssistantData.API_KEYS
 import com.foxconn.abbassistant.AssistantData.COMMAND_MESSAGE
 import com.foxconn.abbassistant.AssistantData.COMMAND_VOICE
+import com.foxconn.abbassistant.AssistantData.ClickOK
 import com.foxconn.abbassistant.AssistantData.PRODUCT_ID
-import com.foxconn.abbassistant.AssistantData.PRODUCT_IDS
 import com.foxconn.abbassistant.AssistantData.TYPE_MODE_AUDIO
 import com.foxconn.abbassistant.AssistantData.USER_ID
 import com.foxconn.abbassistant.AssistantData.UUID_PATH
-import com.foxconn.abbassistant.AssistantData.assistantStatus
-import com.foxconn.abbassistant.AssistantData.clickOK
 import com.foxconn.abbassistant.AssistantData.deviceStatus
-import com.foxconn.abbassistant.AssistantData.isAuthing
 import com.foxconn.abbassistant.AssistantData.isDoAuth
 import com.foxconn.abbassistant.AssistantData.isInitOk
 import com.foxconn.abbassistant.AssistantData.isIniting
 import com.foxconn.abbassistant.AssistantData.isNoises
 import com.foxconn.abbassistant.AssistantData.isOK
-import com.foxconn.abbassistant.AssistantData.isRunning
 import com.foxconn.abbassistant.AssistantData.isTTSing
-import com.foxconn.abbassistant.AssistantData.isUpdated
 import com.foxconn.abbassistant.AudioNoise.getID
 import com.foxconn.abbmanagerservice.AssistantManager
 import de.greenrobot.event.EventBus
@@ -55,6 +46,7 @@ class AssistantService : Service() {
     private val TAG = "AssistantService"
     private var assistantManager: AssistantManager? = null
 
+    private var variable by ConfigPreference("wakeupStatus", true)
 
     private val commandObserver = CommandObserver { command, data ->
         Log.d(TAG, "this command is $command  data is $data")
@@ -90,14 +82,30 @@ class AssistantService : Service() {
                 assistantManager?.basicTypes(1, 1, "语音")
             }
             "sys.dialog.start" -> {
-                clickOK = true
+                ClickOK = true
                 onBindService("")
                 assistantManager?.basicTypes(1, 1, "语音")
             }
             "sys.dialog.end" -> {
-                clickOK = false
+                ClickOK = false
                 onBindService("")
                 assistantManager?.basicTypes(2, 1, "语音")
+            }
+            "sys.dialog.error" -> {
+                val jsonData = JSONObject(data)
+                val err = jsonData.optInt("errId")
+                val msg = jsonData.optString("errMsg")
+                toLog("error -- errorId:$err  msg:$msg")
+                errorDo(err, msg)
+            }
+        }
+    }
+
+    private fun errorDo(type: Int?, msg: String) {
+        when(type) {
+            71319 -> {
+                toLog(msg)
+                DDS.getInstance().doAuth()
             }
         }
     }
@@ -171,8 +179,8 @@ class AssistantService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "OnStartCommand assistant")
         USER_ID = getID(UUID_PATH)!!
-        isRunning = true
         attemptToBindService(type)
+        isIniting = true
         init()
         val flag = Service.START_STICKY
         return super.onStartCommand(intent, flag, startId)
@@ -180,7 +188,6 @@ class AssistantService : Service() {
 
 
     private fun init() {
-        isIniting = true
         DDS.getInstance().setDebugMode(2)//在调试时可以打开sdk调试日志，在发布版本时，请关闭
         DDS.getInstance().init(applicationContext, createConfig(), object : DDSInitListener {
             override fun onInitComplete(isFull: Boolean) {
@@ -195,9 +202,14 @@ class AssistantService : Service() {
 //                        DDS.getInstance().getAgent().getWakeupEngine().updateShortcutWakeupWord(WAKEUP_VOICE, WAKEUP_VOICE_PIN, WAKEUP_VOICE_PIN2)
                         //授权
                         DDS.getInstance().doAuth()
-                        isAuthing = true
                         //调用后才能唤醒
-                        if (assistantStatus)DDS.getInstance().agent.wakeupEngine.enableWakeup()
+                        if (variable) {
+                            toLog("唤醒已默认开启")
+                            DDS.getInstance().agent.wakeupEngine.enableWakeup()
+                        } else {
+                            toLog("唤醒已默认关闭")
+//                            deviceStatus = "唤醒已关闭"
+                        }
                         Log.d(TAG, "onAuthSuccess -->" + DDS.getInstance().isAuthSuccess)
 
                         TTSListener()
@@ -206,6 +218,7 @@ class AssistantService : Service() {
                             "热点打开了，快来帮小安设置网络吧" -> toTTS("热点打开了，快来帮小安设置网络吧")
                             "小安断开网络了" -> toTTS("小安断开网络了")
                             "小安更新完毕了" -> toTTS("小安更新完毕了")
+//                            "唤醒已关闭" -> toTTS("唤醒已关闭")
                         }
                         deviceStatus = ""
                     } catch (e: DDSNotInitCompleteException) {
@@ -225,7 +238,6 @@ class AssistantService : Service() {
 
         }, object : DDSAuthListener {
             override fun onAuthSuccess() {
-                isAuthing = false
                 Log.d(TAG, "onAuthSuccess")
                 isDoAuth = DDS.getInstance().isAuthSuccess
                 if (isInitOk && isDoAuth) {
@@ -242,7 +254,6 @@ class AssistantService : Service() {
 
             override fun onAuthFailed(errId: String?, error: String?) {
                 Log.e(TAG, "onAuthFailed: $errId, error:$error")
-                isAuthing = false
                 EventBus.getDefault().post(AssistantMessageEvent("CHECK_AUTH", null, null, null, null))
             }
         })
@@ -255,7 +266,6 @@ class AssistantService : Service() {
                 override fun onUpdateFound(p0: String?) {
                     Log.d(TAG, "onUpdateFound detail $p0")
                     toLog("小安检测到有更新")
-                    isUpdated = false
                     toTTS("小安正在更新中，等一下好吗")
                 }
 
@@ -267,7 +277,6 @@ class AssistantService : Service() {
                     Log.d(TAG, "onUpdateFinish")
                     deviceStatus = "小安更新完毕了"
                     toLog("小安更新完毕了")
-                    isUpdated = true
 //                    toTTS("小安更新完毕了")
 //                    DDS.getInstance().doAuth()
                     DDS.getInstance().release()
@@ -316,7 +325,6 @@ class AssistantService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        isRunning = false
         DDS.getInstance().agent.unSubscribe(commandObserver)
         DDS.getInstance().agent.unSubscribe(messageObserver)
         DDS.getInstance().release()
@@ -339,13 +347,9 @@ class AssistantService : Service() {
 
 
         config.addConfig(DDSConfig.K_VAD_TIMEOUT, "5000")
-//        config.addConfig(DDSConfig.K_ONESHOT_MIDTIME, "1")
-//        config.addConfig(DDSConfig.K_ONESHOT_ENDTIME, "1")
         config.addConfig(DDSConfig.K_USE_UPDATE_NOTIFICATION, "false")
         config.addConfig(DDSConfig.K_DUICORE_ZIP, "assistant.zip")
         config.addConfig(DDSConfig.K_CUSTOM_ZIP, "product.zip")
-//        config.addConfig(DDSConfig.K_DUICORE_ZIP, Environment.getExternalStorageDirectory().getPath() + "/assistant/assets/assistant.zip")//Environment.getExternalStorageDirectory().getPath() + "/assistant/assets/
-//        config.addConfig(DDSConfig.K_CUSTOM_ZIP, Environment.getExternalStorageDirectory().getPath() + "/assistant/assets/product.zip")
         config.addConfig(DDSConfig.K_CACHE_PATH, "")
 
 
@@ -366,7 +370,9 @@ class AssistantService : Service() {
                     4 -> {
                         isOK = false
                     }
-                    5 -> isOK = true
+                    5 -> {
+                        isOK = true
+                    }
                 }
             }
             "AUDIO" -> {//camera传送音频数据
@@ -392,8 +398,15 @@ class AssistantService : Service() {
                 onBindService("")
                 if (event.getSuccess()!!) {
                     assistantManager?.basicTypes(1, 1, "唤醒")
+                    toTTS("唤醒已打开")
+                    DDS.getInstance().doAuth()
                 } else {
                     assistantManager?.basicTypes(1, 0, "唤醒")
+
+                    val handler = Handler()
+                    handler.postDelayed({
+                        toTTS("唤醒已关闭")
+                    }, 1000)
                 }
             }
         }
@@ -414,25 +427,29 @@ class AssistantService : Service() {
                 deviceStatus = msg
                 toTTS(msg)
             }
-            4 -> {//关闭唤醒
-//                DDS.getInstance().agent.disableWakeup()
+            4 -> {
+                //关闭唤醒
                 if (isInitOk) {
-                    if (assistantStatus && clickOK) {
+                    if (ClickOK) {
                         DDS.getInstance().agent.avatarClick()
                     }
+
                     DDS.getInstance().agent.wakeupEngine.disableWakeup()
                 }
+                variable = false
+
                 EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, false))
-                assistantStatus = false
+
             }
-            5 -> {//打开唤醒
-//                DDS.getInstance().agent.enableWakeup()
-                assistantStatus = true
+            5 -> {
+                //打开唤醒
+                variable = true
                 if (isInitOk) {
                     DDS.getInstance().agent.wakeupEngine.enableWakeup()
-                }
-                EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, true))
 
+                }
+
+                EventBus.getDefault().post(AssistantMessageEvent("WAKEUP", null, null, null, true))
             }
         }
     }
@@ -461,7 +478,7 @@ class AssistantService : Service() {
             val handler = Handler()
             handler.postDelayed({
                 isNoises = true
-            }, 1000)
+            }, 1500)
         }
     }
 
@@ -475,7 +492,7 @@ class AssistantService : Service() {
             return
         }
         toLog("isInitOk $isInitOk ，isDoAuth $isDoAuth")
-        if (!isInitOk && !isIniting && isRunning) {
+        if (!isInitOk && !isIniting) {
             isIniting = true
             EventBus.getDefault().post(AssistantMessageEvent("CHECK_INIT", null, null, null, null))
             return

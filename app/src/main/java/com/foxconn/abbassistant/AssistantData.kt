@@ -18,7 +18,7 @@ object AssistantData {
 
     /*home.control 家电控制*/
     val COMMAND_VOICE = arrayOf("home.control")
-    val COMMAND_MESSAGE = arrayOf("sys.dialog.start", "sys.resource.updated", "sys.wakeup.result", "sys.dialog.start", "sys.dialog.end")
+    val COMMAND_MESSAGE = arrayOf("sys.dialog.start", "sys.resource.updated", "sys.wakeup.result", "sys.dialog.start", "sys.dialog.end", "sys.dialog.error")
 
     val WAKEUP_VOICE = arrayOf("你好小安")
     val WAKEUP_VOICE_PIN = arrayOf("ni hao xiao an")
@@ -34,25 +34,22 @@ object AssistantData {
 
     var UUID_PATH = "proc/tutkuuid"
 
-    var isOK: Boolean = true
+    var isOK: Boolean = true//一键通话屏蔽
 
     var isInitOk: Boolean = false//初始化状态
     var isDoAuth: Boolean = false//授权状态
-    var isRunning: Boolean = false//运行状态
-    var isUpdated: Boolean = false//更新状态
 
     var isIniting: Boolean = false//是否正在初始化
-    var isAuthing: Boolean = false//是否正在授权
 
     var isTTSing: Boolean = false//是否正在播报
 
-    var isNoises: Boolean = true//是否正在播报
-
-    var assistantStatus: Boolean = true//唤醒状态
-
-    var clickOK: Boolean = false
+    var isNoises: Boolean = true//是否计算噪音
+    
+    var ClickOK: Boolean = false //是否可打断
 
     var deviceStatus: String = ""
+    
+    
 
 
 }
